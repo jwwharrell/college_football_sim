@@ -2,6 +2,8 @@ extern crate sqlite;
 
 use sqlite::{Connection, Result};
 
+mod cli;
+
 fn main() -> Result<()> {
     let connection = sqlite::open("db/college_football_simulator.db")?;
 
@@ -11,6 +13,7 @@ fn main() -> Result<()> {
     println!("Database setup complete.");
 
     // game logic will go here
+    cli::run();
 
     Ok(())
 }
