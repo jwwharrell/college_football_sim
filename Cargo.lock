@@ -3,5 +3,59 @@
 version = 3
 
 [[package]]
+name = "cc"
+version = "1.0.83"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f1174fb0b6ec23863f8b971027804a42614e347eafb0a95bf0b12cdae21fc4d0"
+dependencies = [
+ "libc",
+]
+
+[[package]]
 name = "college_football_sim"
 version = "0.1.0"
+dependencies = [
+ "sqlite",
+]
+
+[[package]]
+name = "libc"
+version = "0.2.151"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "302d7ab3130588088d277783b1e2d2e10c9e9e4a16dd9050e6ec93fb3e7048f4"
+
+[[package]]
+name = "pkg-config"
+version = "0.3.28"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "69d3587f8a9e599cc7ec2c00e331f71c4e69a5f9a4b8a6efd5b07466b9736f9a"
+
+[[package]]
+name = "sqlite"
+version = "0.32.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "03801c10193857d6a4a71ec46cee198a15cbc659622aabe1db0d0bdbefbcf8e6"
+dependencies = [
+ "libc",
+ "sqlite3-sys",
+]
+
+[[package]]
+name = "sqlite3-src"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bfc95a51a1ee38839599371685b9d4a926abb51791f0bc3bf8c3bb7867e6e454"
+dependencies = [
+ "cc",
+ "pkg-config",
+]
+
+[[package]]
+name = "sqlite3-sys"
+version = "0.15.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f2752c669433e40ebb08fde824146f50d9628aa0b66a3b7fc6be34db82a8063b"
+dependencies = [
+ "libc",
+ "sqlite3-src",
+]
