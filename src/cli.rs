@@ -1,13 +1,12 @@
-use structopt::StructOpt;
+use inquire::{InquireError, Select};
 
-#[derive(StructOpt)]
-#[structopt(name = "MyApp", about = "An example of StructOpt usage.")]
-struct Cli {
-    #[structopt(short = "c", long = "config", help = "Set a custom config file")]
-    config: String,
-}
+pub fn start_menu() {
+    let options: Vec<&str> = vec!["List Schools", "Search for School", "Simulate Game", "Exit"];
 
-pub fn run() {
-    let args = Cli::from_args();
-    println!("Using config file: {}", args.config);
+    let ans: Result<&str, InquireError> = Select::new("Welcome to College Football Simulator!", options).prompt();
+    
+    match ans {
+        Ok(choice) => println!("You selected {}!", choice),
+        Err(_) => println!("There was an error, please try again"),
+    }
 }

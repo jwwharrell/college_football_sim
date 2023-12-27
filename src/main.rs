@@ -13,8 +13,7 @@ fn main() -> Result<()> {
     println!("Database setup complete.");
 
     // game logic will go here
-    cli::run();
-
+    cli::start_menu();
     Ok(())
 }
 
