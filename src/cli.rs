@@ -13,8 +13,12 @@ pub fn start_menu() {
             if choice == "List Schools" {
                 let conn = sqlite::open("db/college_football_simulator.db").unwrap();
                 let dao = SchoolDAO::new(conn);
-                match dao.get_by_id(1) {
-                    Ok(school) => println!("Found school {}", school),
+                match dao.list() {
+                    Ok(schools) => {
+                        for tuple in schools {
+                            println!("{:?}", tuple)
+                        }
+                    }
                     Err(e) => println!("Error fetching school: {}", e),
                 }
             }
