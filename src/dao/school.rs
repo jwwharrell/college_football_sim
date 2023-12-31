@@ -1,8 +1,8 @@
-use std::{fmt, result};
+use std::fmt;
 
 extern crate sqlite;
 
-use sqlite::{Row, State};
+use sqlite::State;
 
 #[derive(Debug)]
 pub enum MyError {

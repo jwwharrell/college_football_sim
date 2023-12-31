@@ -1,4 +1,4 @@
-use inquire::{InquireError, Select};
+use inquire::{InquireError, Select, Text};
 
 use crate::dao::school::SchoolDAO;
 
@@ -19,7 +19,26 @@ pub fn start_menu() {
                             println!("{:?}", tuple)
                         }
                     }
-                    Err(e) => println!("Error fetching school: {}", e),
+                    Err(e) => println!("Error listing schools: {}", e),
+                }
+            }
+            if choice == "Search for School" {
+                let school_id_prompt =
+                    Text::new("Enter the ID of the school you would like to view:").prompt();
+
+                match school_id_prompt {
+                    Ok(school_id) => {
+                        let conn = sqlite::open("db/college_football_simulator.db").unwrap();
+                        let dao = SchoolDAO::new(conn);
+                        let parsed_school_id = school_id.parse::<i64>().unwrap();
+                        match dao.get_by_id(parsed_school_id) {
+                            Ok(school) => {
+                                println!("School Detail: {}", school)
+                            }
+                            Err(e) => println!("Error fetching school: {}", e),
+                        }
+                    }
+                    Err(_) => println!("There was an error with the given input."),
                 }
             }
             println!("You selected {}!", choice)
