@@ -1,3 +1,6 @@
-/target
-./college_football_simulator.db
-/db
+/target/
+/db/
+*.db
+*.db-shm
+*.db-wal
+.DS_Store

@@ -1,0 +1,15 @@
+[package]
+name = "sim_core"
+version = "0.1.0"
+edition = "2021"
+description = "Pure domain logic for a deterministic college football simulator"
+
+[dependencies]
+thiserror = { workspace = true }
+serde = { workspace = true }
+rand = { workspace = true }
+rand_chacha = { workspace = true }
+tracing = { workspace = true }
+
+[dev-dependencies]
+proptest = "1.0"

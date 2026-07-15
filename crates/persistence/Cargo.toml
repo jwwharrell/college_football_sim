@@ -1,0 +1,11 @@
+[package]
+name = "persistence"
+version = "0.1.0"
+edition = "2021"
+description = "Persistence adapters for the college football simulator (e.g., SQLite, JSON). No simulation logic."
+
+[dependencies]
+thiserror = { workspace = true }
+serde = { workspace = true }
+rusqlite = { version = "0.31", features = ["bundled", "chrono"] }
+tracing = { workspace = true }
