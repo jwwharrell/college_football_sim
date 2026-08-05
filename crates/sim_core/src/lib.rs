@@ -5,9 +5,11 @@
 //! - Deterministic via seeded RNG (injected at the edges).
 //! - Explicit errors via thiserror; no unwraps in app code.
 
+pub mod calibration;
 pub mod game;
 pub mod rng;
 pub mod season;
+pub mod simulation;
 pub mod team;
 
 #[cfg(test)]

@@ -6,7 +6,10 @@ description = "Command-line interface for the college football simulator"
 
 [dependencies]
 anyhow = { workspace = true }
+sim_core = { path = "../sim_core" }
+persistence = { path = "../persistence" }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 clap = { version = "4", features = ["derive"] }
 inquire = "0.7"
+serde_json = { workspace = true }
