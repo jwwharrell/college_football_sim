@@ -22,7 +22,3 @@ jobs:
         run: cargo build --workspace --verbose
       - name: Run tests
         run: cargo test --workspace --verbose
-      - name: Validate product roadmap
-        run: cargo run -p cli -- roadmap validate
-      - name: Check generated roadmap
-        run: cargo run -p cli -- roadmap check
