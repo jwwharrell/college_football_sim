@@ -16,6 +16,8 @@ use sim_core::team::Team;
 use tracing::{info, Level};
 use tracing_subscriber::{fmt, EnvFilter};
 
+mod roadmap;
+
 /// College Football Simulator CLI
 #[derive(Parser, Debug)]
 #[command(
@@ -100,6 +102,24 @@ enum Command {
         #[arg(long)]
         json: bool,
     },
+    /// Validate and render the version-controlled product roadmap
+    Roadmap {
+        /// Repository root containing roadmap.yaml and openspec/
+        #[arg(long, default_value = ".")]
+        root: std::path::PathBuf,
+        #[command(subcommand)]
+        command: RoadmapCommand,
+    },
+}
+
+#[derive(Subcommand, Debug)]
+enum RoadmapCommand {
+    /// Validate roadmap structure, dependencies, lifecycle, and evidence
+    Validate,
+    /// Regenerate ROADMAP.md from roadmap.yaml
+    Render,
+    /// Verify ROADMAP.md is the current canonical rendering without writing
+    Check,
 }
 
 fn init_tracing(verbose: u8) {
@@ -242,6 +262,11 @@ fn execute(command: Command) -> Result<String> {
             ensure!(report.passed, "calibration failed\n{output}");
             Ok(output)
         }
+        Command::Roadmap { root, command } => match command {
+            RoadmapCommand::Validate => roadmap::validate_at(&root),
+            RoadmapCommand::Render => roadmap::render_at(&root),
+            RoadmapCommand::Check => roadmap::check_at(&root),
+        },
     }
 }
 
@@ -499,5 +524,37 @@ mod tests {
         let report: sim_core::calibration::CalibrationReport =
             serde_json::from_str(&json).expect("machine-readable report");
         assert!(report.passed);
+    }
+
+    #[test]
+    fn roadmap_commands_parse() {
+        for action in ["validate", "render", "check"] {
+            let cli = Cli::try_parse_from(["cli", "roadmap", "--root", ".", action])
+                .expect("valid roadmap command");
+            assert!(matches!(cli.command, Command::Roadmap { .. }));
+        }
+    }
+
+    #[test]
+    fn roadmap_commands_execute_against_repository_fixture() {
+        let root = tempfile::tempdir().unwrap();
+        std::fs::write(
+            root.path().join("roadmap.yaml"),
+            "schema_version: 1\nitems:\n  - id: TEST-01\n    sequence: 1\n    title: Test roadmap\n    theme: test\n    status: exploring\n    outcome: The roadmap works.\n    exclusions: [Delivery]\n",
+        )
+        .unwrap();
+        let command = |action| Command::Roadmap {
+            root: root.path().to_path_buf(),
+            command: action,
+        };
+        assert!(execute(command(RoadmapCommand::Validate))
+            .unwrap()
+            .contains("1 items"));
+        execute(command(RoadmapCommand::Render)).unwrap();
+        assert!(execute(command(RoadmapCommand::Check))
+            .unwrap()
+            .contains("current"));
+        std::fs::write(root.path().join("ROADMAP.md"), "stale\n").unwrap();
+        assert!(execute(command(RoadmapCommand::Check)).is_err());
     }
 }

@@ -1,0 +1,144 @@
+schema_version: 1
+items:
+  - id: SIM-01
+    sequence: 1
+    title: Statistical game simulation
+    theme: simulation
+    status: complete
+    outcome: Rated teams produce deterministic, calibrated possession-level games and auditable statistical summaries.
+    exclusions:
+      - Player-level and play-by-play simulation
+      - Historical-era-specific rules
+    depends_on: []
+    evidence:
+      capabilities:
+        - possession-game-simulation
+        - simulation-calibration
+      archived_changes:
+        - 2026-08-05-add-possession-game-simulation
+
+  - id: DYNASTY-01
+    sequence: 2
+    title: Player and roster model
+    theme: dynasty
+    status: exploring
+    outcome: Programs maintain multi-season player rosters with positions, attributes, eligibility, and stable identity.
+    exclusions:
+      - Recruiting and transfer acquisition workflows
+      - Player-level game simulation
+    depends_on:
+      - SIM-01
+
+  - id: DYNASTY-02
+    sequence: 3
+    title: Positions and depth charts
+    theme: dynasty
+    status: exploring
+    outcome: Managers assign eligible players to positional units and ordered depth charts that expose team strengths to simulation.
+    exclusions:
+      - In-game substitutions and tactical packages
+      - Injury and fatigue effects
+    depends_on:
+      - DYNASTY-01
+
+  - id: SEASON-01
+    sequence: 4
+    title: Schedules and weekly season loop
+    theme: season
+    status: exploring
+    outcome: A dynasty advances through scheduled weeks, simulates games, updates standings, and preserves deterministic season state.
+    exclusions:
+      - Rankings and postseason selection
+      - Conference schedule optimization
+    depends_on:
+      - SIM-01
+
+  - id: DYNASTY-03
+    sequence: 5
+    title: Development, fatigue, and injuries
+    theme: dynasty
+    status: exploring
+    outcome: Player ability and availability evolve through training, games, recovery, fatigue, and injuries across a season.
+    exclusions:
+      - Medical staff employment simulation
+      - Detailed rehabilitation minigames
+    depends_on:
+      - DYNASTY-01
+      - SEASON-01
+
+  - id: RECRUIT-01
+    sequence: 6
+    title: Recruiting
+    theme: recruiting
+    status: exploring
+    outcome: Programs scout and pursue prospects through a competitive, explainable recruiting cycle that produces future rosters.
+    exclusions:
+      - Transfer portal movement
+      - Real-world prospect data ingestion
+    depends_on:
+      - DYNASTY-01
+
+  - id: DYNASTY-04
+    sequence: 7
+    title: Coaching staff, schemes, and tactics
+    theme: dynasty
+    status: exploring
+    outcome: Managers hire staff and choose schemes and tactical instructions that visibly modify player development and matchup performance.
+    exclusions:
+      - User-controlled play calling
+      - Full playbook authoring
+    depends_on:
+      - SIM-01
+      - DYNASTY-01
+
+  - id: DYNASTY-05
+    sequence: 8
+    title: Transfers, graduation, and offseason progression
+    theme: dynasty
+    status: exploring
+    outcome: Rosters transition coherently between seasons through graduation, departures, transfers, arrivals, and offseason development.
+    exclusions:
+      - Professional draft simulation
+      - Athlete compensation negotiation
+    depends_on:
+      - DYNASTY-01
+      - DYNASTY-03
+      - RECRUIT-01
+
+  - id: PROGRAM-01
+    sequence: 9
+    title: Prestige, facilities, finances, and expectations
+    theme: program
+    status: exploring
+    outcome: Program resources, reputation, leadership expectations, and investments create long-term constraints and strategic tradeoffs.
+    exclusions:
+      - Detailed university-wide accounting
+      - Real-money monetization systems
+    depends_on:
+      - SEASON-01
+      - RECRUIT-01
+
+  - id: POSTSEASON-01
+    sequence: 10
+    title: Rankings, bowls, conference championships, and playoff
+    theme: postseason
+    status: exploring
+    outcome: Season performance feeds transparent rankings and configurable postseason qualification, seeding, and championship resolution.
+    exclusions:
+      - Exact reproduction of every historical postseason format
+      - Human committee simulation in the initial version
+    depends_on:
+      - SEASON-01
+
+  - id: HISTORY-01
+    sequence: 11
+    title: Records, awards, and historical continuity
+    theme: history
+    status: exploring
+    outcome: The dynasty preserves season histories, records, awards, champions, and career milestones for long-term storytelling.
+    exclusions:
+      - Importing complete real-world historical archives
+      - Media narrative generation
+    depends_on:
+      - SEASON-01
+      - POSTSEASON-01

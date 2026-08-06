@@ -57,6 +57,20 @@ Simulation model
 - The current overtime model is a simplified, versioned college format rather than a complete set of historical NCAA rules.
 - See `CALIBRATION.md` for statistical targets, the checked-in baseline, runtime, and profile update process.
 
+Product roadmap
+- `roadmap.yaml` is the sole editable source for product direction, lifecycle status, dependencies, scope exclusions, and delivery evidence.
+- `ROADMAP.md` is generated; do not edit it directly.
+- Validate roadmap structure and OpenSpec evidence:
+  - `cargo run -p cli -- roadmap validate`
+- Regenerate the human-readable roadmap after editing YAML:
+  - `cargo run -p cli -- roadmap render`
+- Check for generated-document drift without writing files:
+  - `cargo run -p cli -- roadmap check`
+- Normal lifecycle: `exploring` → `proposed` → `active` → `complete`. Any non-complete item can become `deferred`, and deferred work returns through `exploring`.
+- `proposed` and `active` items must reference an active OpenSpec change. `complete` items must reference a synchronized main capability spec or archived change. Detailed requirements and delivery remain authoritative in OpenSpec.
+- Exploring items are directional candidates, not release commitments. The roadmap intentionally contains no delivery dates or effort estimates.
+- Workflow: explore the feature → create an OpenSpec proposal → mark it proposed/active with change evidence → implement → sync specs and archive → mark it complete with durable evidence → regenerate `ROADMAP.md`.
+
 Error handling
 - Errors are explicit and bubble up using thiserror-based enums.
 - No unwrap in application code; error contexts use anyhow at the CLI boundary when appropriate.
