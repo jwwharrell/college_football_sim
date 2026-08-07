@@ -61,7 +61,13 @@ Player and roster domain
 - `sim_core::player` provides stable player IDs, common positions, bounded foundational attributes, and explicit four-season eligibility state.
 - `sim_core::roster` owns unique, deterministically ordered program membership for a season and produces a new roster for all-or-nothing season transitions.
 - Eligibility is intentionally simplified: an explicit outcome either consumes one of four seasons or uses the player's single redshirt, without attempting to reproduce historical waivers or medical exceptions.
-- Rosters remain independent of aggregate `Team` ratings and possession simulation inputs. Recruiting, transfers, depth charts, development, fatigue, injuries, and player-level game simulation are deferred.
+- Rosters remain independent of aggregate `Team` ratings; callers explicitly opt into depth-chart-derived simulation modifiers. Recruiting, transfers, development, fatigue, injuries, and player-level game simulation are deferred.
+
+Depth charts and unit strengths
+- Managers can build a canonical, season-scoped chart from a `Roster`, ordering eligible players at typed offense, defense, and specialist slots. Construction and edits reject missing starters, non-members, exhausted players, incompatible positions, and duplicate assignments within a unit.
+- `DepthChart::strengths` derives reproducible 0–100 offense, defense, and special-teams values using the documented `foundational-v1` integer formula. Starters receive full weight; backups receive decreasing weights.
+- `UnitStrengths::matchup_modifiers` converts both teams' values into the existing bounded matchup-modifier seam. A strength of 50 is neutral, so integration is opt-in and aggregate `Team` ratings remain the baseline.
+- This implements [GitHub issue #15](https://github.com/jwwharrell/college_football_sim/issues/15). In-game substitutions, tactical packages, injuries, fatigue, and snap-level personnel remain deferred.
 
 Product roadmap
 - Product direction, priority, and lifecycle are managed in [GitHub Project #1](https://github.com/users/jwwharrell/projects/1).

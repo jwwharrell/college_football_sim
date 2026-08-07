@@ -32,6 +32,10 @@ pub struct MatchupModifiers {
     pub home_defense: f64,
     /// Additive away defense rating adjustment.
     pub away_defense: f64,
+    /// Additive home special-teams rating adjustment.
+    pub home_special_teams: f64,
+    /// Additive away special-teams rating adjustment.
+    pub away_special_teams: f64,
 }
 
 /// Immutable inputs for one game.
@@ -68,6 +72,14 @@ impl Matchup {
             ("modifiers.away_offense", self.modifiers.away_offense),
             ("modifiers.home_defense", self.modifiers.home_defense),
             ("modifiers.away_defense", self.modifiers.away_defense),
+            (
+                "modifiers.home_special_teams",
+                self.modifiers.home_special_teams,
+            ),
+            (
+                "modifiers.away_special_teams",
+                self.modifiers.away_special_teams,
+            ),
         ] {
             finite(name, value)?;
             if !(-25.0..=25.0).contains(&value) {
@@ -775,8 +787,20 @@ fn matchup_efficiency(matchup: &Matchup, config: &SimulationConfig, side: Side) 
         / 100.0;
     let overall = (f64::from(offense.rating) - f64::from(defense.rating)) / 100.0
         * config.overall_coefficient;
-    let special =
-        (f64::from(offense.special_teams_rating) - f64::from(defense.special_teams_rating)) / 500.0;
+    let (offense_special, defense_special) = match side {
+        Side::Home => (
+            matchup.modifiers.home_special_teams,
+            matchup.modifiers.away_special_teams,
+        ),
+        Side::Away => (
+            matchup.modifiers.away_special_teams,
+            matchup.modifiers.home_special_teams,
+        ),
+    };
+    let special = (f64::from(offense.special_teams_rating) + offense_special
+        - f64::from(defense.special_teams_rating)
+        - defense_special)
+        / 500.0;
     let venue = if side == Side::Home && matchup.venue == Venue::Home {
         config.home_advantage_rating / 100.0
     } else {
@@ -865,6 +889,7 @@ fn invalid(message: impl Into<String>) -> SimError {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::depth_chart::UnitStrengths;
     use crate::player::{ClassYear, Eligibility, Player, PlayerAttributes, Position};
     use crate::roster::Roster;
 
@@ -967,6 +992,66 @@ mod tests {
         assert_eq!(before.game.home_score, after.game.home_score);
         assert_eq!(before.game.away_score, after.game.away_score);
         assert_eq!(before.possessions, after.possessions);
+    }
+
+    #[test]
+    fn neutral_roster_strengths_preserve_default_seeded_result() {
+        let config = SimulationConfig::default();
+        let baseline = simulate_game(&matchup(), &config, 42).unwrap();
+        let neutral = UnitStrengths {
+            offense: 50,
+            defense: 50,
+            special_teams: 50,
+        };
+        let mut composed = matchup();
+        composed.modifiers = UnitStrengths::matchup_modifiers(neutral, neutral);
+        let result = simulate_game(&composed, &config, 42).unwrap();
+        assert_eq!(baseline.possessions, result.possessions);
+        assert_eq!(baseline.game.home_score, result.game.home_score);
+        assert_eq!(baseline.game.away_score, result.game.away_score);
+    }
+
+    #[test]
+    fn roster_derived_unit_modifiers_have_directional_paired_seed_effects() {
+        let config = SimulationConfig::default();
+        let neutral = UnitStrengths {
+            offense: 50,
+            defense: 50,
+            special_teams: 50,
+        };
+        let mut baseline = matchup();
+        baseline.home = team("home", 75);
+        baseline.away = team("away", 75);
+        baseline.venue = Venue::Neutral;
+        baseline.modifiers = UnitStrengths::matchup_modifiers(neutral, neutral);
+
+        let mean = |strengths: UnitStrengths| {
+            let mut candidate = baseline.clone();
+            candidate.modifiers = UnitStrengths::matchup_modifiers(strengths, neutral);
+            (0..400).fold((0_u64, 0_u64), |totals, seed| {
+                let result = simulate_game(&candidate, &config, seed).unwrap();
+                (
+                    totals.0 + u64::from(result.home_stats.points),
+                    totals.1 + u64::from(result.away_stats.points),
+                )
+            })
+        };
+        let base = mean(neutral);
+        let offense = mean(UnitStrengths {
+            offense: 100,
+            ..neutral
+        });
+        let defense = mean(UnitStrengths {
+            defense: 100,
+            ..neutral
+        });
+        let special = mean(UnitStrengths {
+            special_teams: 100,
+            ..neutral
+        });
+        assert!(offense.0 >= base.0);
+        assert!(defense.1 <= base.1);
+        assert!(special.0.saturating_sub(special.1) >= base.0.saturating_sub(base.1));
     }
 
     #[test]

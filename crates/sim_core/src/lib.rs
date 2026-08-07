@@ -8,6 +8,7 @@
 //!   aggregate [`team::Team`] inputs consumed by possession simulation.
 
 pub mod calibration;
+pub mod depth_chart;
 pub mod game;
 pub mod player;
 pub mod rng;
