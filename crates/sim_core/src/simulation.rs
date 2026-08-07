@@ -865,6 +865,8 @@ fn invalid(message: impl Into<String>) -> SimError {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::player::{ClassYear, Eligibility, Player, PlayerAttributes, Position};
+    use crate::roster::Roster;
 
     fn team(id: &str, rating: u8) -> Team {
         Team::new(
@@ -941,6 +943,30 @@ mod tests {
         assert_eq!(first.game.home_score, second.game.home_score);
         assert_eq!(first.game.away_score, second.game.away_score);
         first.validate().expect("result reconciles");
+    }
+
+    #[test]
+    fn adjacent_roster_does_not_change_seeded_aggregate_simulation() {
+        let config = SimulationConfig::default();
+        let before = simulate_game(&matchup(), &config, 42).unwrap();
+        let _adjacent_roster = Roster::new(
+            "home",
+            2026,
+            vec![Player::new(
+                "player-1",
+                "Ada",
+                "Lovelace",
+                Position::Quarterback,
+                PlayerAttributes::new(90, 60, 85, 92, 88).unwrap(),
+                Eligibility::new(ClassYear::Freshman, 0, 4, false).unwrap(),
+            )
+            .unwrap()],
+        )
+        .unwrap();
+        let after = simulate_game(&matchup(), &config, 42).unwrap();
+        assert_eq!(before.game.home_score, after.game.home_score);
+        assert_eq!(before.game.away_score, after.game.away_score);
+        assert_eq!(before.possessions, after.possessions);
     }
 
     #[test]

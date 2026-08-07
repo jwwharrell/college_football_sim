@@ -45,4 +45,4 @@ cargo test -p sim_core calibration::tests::canonical_calibration_passes -- --ign
 
 ## Interpretation and limits
 
-Passing means the fixed matchup matrix lies within the profile's declared aggregate envelopes; it does not prove realism for every team strength or matchup. The engine currently lacks players, schemes, coaching, fatigue, injuries, weather, penalties, and tactical clock management. Public matchup modifiers provide an extension seam for these systems without coupling them to drive orchestration.
+Passing means the fixed matchup matrix lies within the profile's declared aggregate envelopes; it does not prove realism for every team strength or matchup. The domain now models players and season rosters, but the engine deliberately does not derive simulation inputs from them yet. It still lacks depth charts, player-level effects, schemes, coaching, fatigue, injuries, weather, penalties, and tactical clock management. Public matchup modifiers provide an extension seam for these systems without coupling them to drive orchestration.

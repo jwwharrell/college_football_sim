@@ -57,6 +57,12 @@ Simulation model
 - The current overtime model is a simplified, versioned college format rather than a complete set of historical NCAA rules.
 - See `CALIBRATION.md` for statistical targets, the checked-in baseline, runtime, and profile update process.
 
+Player and roster domain
+- `sim_core::player` provides stable player IDs, common positions, bounded foundational attributes, and explicit four-season eligibility state.
+- `sim_core::roster` owns unique, deterministically ordered program membership for a season and produces a new roster for all-or-nothing season transitions.
+- Eligibility is intentionally simplified: an explicit outcome either consumes one of four seasons or uses the player's single redshirt, without attempting to reproduce historical waivers or medical exceptions.
+- Rosters remain independent of aggregate `Team` ratings and possession simulation inputs. Recruiting, transfers, depth charts, development, fatigue, injuries, and player-level game simulation are deferred.
+
 Product roadmap
 - Product direction, priority, and lifecycle are managed in [GitHub Project #1](https://github.com/users/jwwharrell/projects/1).
 - OpenSpec remains authoritative for concrete requirements, designs, implementation tasks, synchronized capability specs, and archived delivery history.
@@ -73,7 +79,7 @@ Separation of concerns
 
 Status
 - Workspace scaffold with Cargo manifests and crate entry files.
-- Core domain types (Team, Game, Season), deterministic ChaCha8 RNG, and validation defined in sim_core.
+- Core domain types (Team, Game, Season, Player, Roster), deterministic ChaCha8 RNG, and validation defined in sim_core.
 - Unit tests cover deterministic RNG, scoring, records, lifecycle transitions, and invalid inputs.
 - Next steps:
   - Introduce storage trait(s) and a simple JSON adapter in persistence.

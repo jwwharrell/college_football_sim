@@ -4,10 +4,14 @@
 //! - No I/O or persistence here (pure, testable functions).
 //! - Deterministic via seeded RNG (injected at the edges).
 //! - Explicit errors via thiserror; no unwraps in app code.
+//! - Player rosters are an adjacent dynasty-domain model and do not alter the
+//!   aggregate [`team::Team`] inputs consumed by possession simulation.
 
 pub mod calibration;
 pub mod game;
+pub mod player;
 pub mod rng;
+pub mod roster;
 pub mod season;
 pub mod simulation;
 pub mod team;
