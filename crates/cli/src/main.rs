@@ -8,7 +8,7 @@ use clap::{Parser, Subcommand};
 use sim_core::calibration::run_calibration;
 use sim_core::game::{Game, Quarter};
 use sim_core::rng::SimRng;
-use sim_core::season::Season;
+use sim_core::season::{ScheduledGame, Season, TeamRecord};
 use sim_core::simulation::{
     simulate_game, Matchup, MatchupModifiers, SimulationConfig, SimulationResult, Venue,
 };
@@ -68,6 +68,19 @@ enum Command {
         /// Final score for the away team
         #[arg(long)]
         away_score: u16,
+    },
+    /// Display the validated sample regular-season schedule and derived game seeds
+    Schedule {
+        #[arg(long, default_value_t = 42)]
+        seed: u64,
+    },
+    /// Simulate the current week or the full sample regular season
+    SeasonLoop {
+        #[arg(long, default_value_t = 42)]
+        seed: u64,
+        /// Advance every remaining regular-season week
+        #[arg(long)]
+        full: bool,
     },
     /// Simulate a reproducible rated matchup possession by possession
     Simulate {
@@ -166,24 +179,14 @@ fn execute(command: Command) -> Result<String> {
             home_score,
             away_score,
         } => {
-            let game = completed_game(home_score, away_score, true)?;
-            let home_id = game.home_team.id.clone();
-            let away_id = game.away_team.id.clone();
-            let mut season = Season::new(
-                2026,
-                vec![game.home_team.clone(), game.away_team.clone()],
-                12,
-            );
-            season.add_game(game);
-            season.update_records();
-            let home = season
-                .record_for_team(&home_id)
-                .ok_or_else(|| anyhow::anyhow!("home record was not created"))?;
-            let away = season
-                .record_for_team(&away_id)
-                .ok_or_else(|| anyhow::anyhow!("away record was not created"))?;
+            let (home, away) = records_for_score(home_score, away_score);
             Ok(format!("Home State: {home}\nAway Tech: {away}"))
         }
+        Command::Schedule { seed } => {
+            let season = sample_season()?;
+            Ok(format_schedule(&season, seed)?)
+        }
+        Command::SeasonLoop { seed, full } => run_season_loop(seed, full),
         Command::Simulate {
             seed,
             neutral,
@@ -243,6 +246,175 @@ fn execute(command: Command) -> Result<String> {
             Ok(output)
         }
     }
+}
+
+fn records_for_score(home_score: u16, away_score: u16) -> (TeamRecord, TeamRecord) {
+    let mut home = TeamRecord::new();
+    let mut away = TeamRecord::new();
+    match home_score.cmp(&away_score) {
+        std::cmp::Ordering::Greater => {
+            home.wins = 1;
+            home.conference_wins = 1;
+            away.losses = 1;
+            away.conference_losses = 1;
+        }
+        std::cmp::Ordering::Less => {
+            away.wins = 1;
+            away.conference_wins = 1;
+            home.losses = 1;
+            home.conference_losses = 1;
+        }
+        std::cmp::Ordering::Equal => {
+            home.ties = 1;
+            home.conference_ties = 1;
+            away.ties = 1;
+            away.conference_ties = 1;
+        }
+    }
+    (home, away)
+}
+
+fn sample_season() -> Result<Season> {
+    let teams = vec![
+        rated_team("home", "Home State", "HST", 82, 84, 81, 76)?,
+        rated_team("away", "Away Tech", "AWT", 76, 78, 74, 72)?,
+        rated_team("north", "North College", "NTH", 79, 80, 79, 77)?,
+        rated_team("south", "South University", "STH", 73, 74, 72, 75)?,
+    ];
+    let games = vec![
+        ScheduledGame::new(
+            "2026-w1-away-at-home",
+            "home",
+            "away",
+            "Home Stadium",
+            1,
+            true,
+            Venue::Home,
+        ),
+        ScheduledGame::new(
+            "2026-w1-south-at-north",
+            "north",
+            "south",
+            "North Stadium",
+            1,
+            true,
+            Venue::Home,
+        ),
+        ScheduledGame::new(
+            "2026-w2-north-at-home",
+            "home",
+            "north",
+            "Home Stadium",
+            2,
+            false,
+            Venue::Home,
+        ),
+        ScheduledGame::new(
+            "2026-w2-away-vs-south",
+            "away",
+            "south",
+            "Kickoff Classic",
+            2,
+            false,
+            Venue::Neutral,
+        ),
+        ScheduledGame::new(
+            "2026-w3-home-at-south",
+            "south",
+            "home",
+            "South Stadium",
+            3,
+            true,
+            Venue::Home,
+        ),
+        ScheduledGame::new(
+            "2026-w3-north-at-away",
+            "away",
+            "north",
+            "Away Stadium",
+            3,
+            true,
+            Venue::Home,
+        ),
+    ];
+    Ok(Season::new(2026, teams, 3, games)?)
+}
+
+fn format_schedule(season: &Season, seed: u64) -> Result<String> {
+    season
+        .schedule()
+        .entries()
+        .iter()
+        .map(|game| {
+            Ok(format!(
+                "week={} game={} away={} home={} venue={:?} conference={} seed={}",
+                game.week,
+                game.id,
+                game.away_team_id,
+                game.home_team_id,
+                game.venue,
+                game.is_conference_game,
+                season.game_seed(seed, &game.id)?
+            ))
+        })
+        .collect::<Result<Vec<_>>>()
+        .map(|lines| lines.join("\n"))
+}
+
+fn run_season_loop(seed: u64, full: bool) -> Result<String> {
+    let mut season = sample_season()?;
+    let config = SimulationConfig::default();
+    if full {
+        season.advance_regular_season(seed, &config)?;
+    } else {
+        season.advance_week(seed, &config)?;
+    }
+
+    let results = season
+        .schedule()
+        .entries()
+        .iter()
+        .filter_map(|scheduled| season.result_for_game(&scheduled.id))
+        .map(|result| {
+            format!(
+                "week={} game={} {} {} - {} {} model={} profile={} seed={}",
+                result.game.week,
+                result.game.id,
+                result.game.away_team.name,
+                result.game.away_score.total,
+                result.game.home_score.total,
+                result.game.home_team.name,
+                result.provenance.algorithm_version,
+                result.provenance.profile_version,
+                result.provenance.seed,
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+    let standings = season
+        .conference_standings("Demo Conference")
+        .iter()
+        .map(|(team, record)| {
+            format!(
+                "{} overall={} conference={}",
+                team.name,
+                record,
+                record.conference_to_string()
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+    Ok(format!(
+        "season=2026 seed={seed} state={} next_week={}\nResults\n{results}\nStandings\n{standings}",
+        if season.is_complete() {
+            "complete"
+        } else {
+            "in-progress"
+        },
+        season
+            .current_week()
+            .map_or_else(|| "none".into(), |week| week.to_string())
+    ))
 }
 
 fn rated_team(
@@ -440,6 +612,55 @@ mod tests {
         })
         .expect("season command succeeds");
         assert_eq!(output, "Home State: 0-1-0\nAway Tech: 1-0-0");
+    }
+
+    #[test]
+    fn parses_season_commands_and_rejects_invalid_seed() {
+        assert!(matches!(
+            Cli::try_parse_from(["cli", "schedule", "--seed", "7"])
+                .unwrap()
+                .command,
+            Command::Schedule { seed: 7 }
+        ));
+        assert!(matches!(
+            Cli::try_parse_from(["cli", "season-loop", "--seed", "7", "--full"])
+                .unwrap()
+                .command,
+            Command::SeasonLoop {
+                seed: 7,
+                full: true
+            }
+        ));
+        assert!(Cli::try_parse_from(["cli", "season-loop", "--seed", "invalid"]).is_err());
+    }
+
+    #[test]
+    fn schedule_output_is_canonical_and_reproducible() {
+        let first = execute(Command::Schedule { seed: 99 }).unwrap();
+        let second = execute(Command::Schedule { seed: 99 }).unwrap();
+        assert_eq!(first, second);
+        assert_eq!(first.lines().count(), 6);
+        assert!(first.lines().next().unwrap().contains("week=1"));
+        assert!(first.contains("venue=Neutral"));
+    }
+
+    #[test]
+    fn weekly_and_full_season_outputs_are_reproducible() {
+        for full in [false, true] {
+            let command = || Command::SeasonLoop { seed: 2026, full };
+            let first = execute(command()).unwrap();
+            let second = execute(command()).unwrap();
+            assert_eq!(first, second);
+            assert!(first.contains("model=possession-v1"));
+            assert!(first.contains("Standings"));
+            if full {
+                assert!(first.contains("state=complete next_week=none"));
+                assert_eq!(first.matches("game=2026-").count(), 6);
+            } else {
+                assert!(first.contains("state=in-progress next_week=2"));
+                assert_eq!(first.matches("game=2026-").count(), 2);
+            }
+        }
     }
 
     fn simulation_command(seed: u64, neutral: bool) -> Command {

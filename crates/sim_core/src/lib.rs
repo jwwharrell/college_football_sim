@@ -48,6 +48,18 @@ pub enum SimError {
     #[error("invalid game status for operation")]
     InvalidGameStatus,
 
+    /// Error when a regular-season schedule violates domain invariants.
+    #[error("invalid schedule: {0}")]
+    InvalidSchedule(String),
+
+    /// Error when serialized or in-memory season state cannot progress safely.
+    #[error("invalid season state: {0}")]
+    InvalidSeasonState(String),
+
+    /// Error when progression is requested after the final week.
+    #[error("regular season is complete")]
+    SeasonComplete,
+
     /// Placeholder for other errors
     #[error("other error: {0}")]
     Other(String),

@@ -37,6 +37,12 @@ CLI feature harness
   - `cargo run -p cli -- game --home-score 24 --away-score 17 --conference`
 - Exercise season record calculation:
   - `cargo run -p cli -- season --home-score 10 --away-score 20`
+- Inspect the canonical sample schedule and per-game seeds:
+  - `cargo run -p cli -- schedule --seed 42`
+- Simulate the current week of the sample regular season:
+  - `cargo run -p cli -- season-loop --seed 42`
+- Simulate the complete sample regular season:
+  - `cargo run -p cli -- season-loop --seed 42 --full`
 - Simulate a deterministic possession-level rated matchup:
   - `cargo run -p cli -- simulate --seed 42 --home-rating 82 --home-offense 85 --home-defense 80 --home-special-teams 76 --away-rating 75 --away-offense 78 --away-defense 74 --away-special-teams 72`
   - Add `--neutral` to remove the configured home-field modifier.
@@ -56,6 +62,14 @@ Simulation model
 - The public `MatchupModifiers` seam is reserved for future roster units, schemes, coaching, fatigue, weather, and injury effects. Those dynasty systems are intentionally not modeled yet.
 - The current overtime model is a simplified, versioned college format rather than a complete set of historical NCAA rules.
 - See `CALIBRATION.md` for statistical targets, the checked-in baseline, runtime, and profile update process.
+
+Season schedules and progression
+- `sim_core::season` validates a complete regular-season schedule before play begins. Game IDs and team IDs must be non-empty and unique, both opponents must belong to the season, weeks must be in range, and a team may play at most once per week. Byes and empty weeks are valid.
+- Schedule entries are stored in canonical `(week, game ID)` order and preserve location, home/away identity, neutral-site context, and conference-game status.
+- Advancing a week is a pure, all-or-nothing domain transition: every current-week game is simulated into a candidate state before results, records, or the week counter are committed. A failure leaves the original season unchanged.
+- Each game receives an isolated seed derived from the explicit season seed, season year, and durable game ID using the versioned `season-game-v1` identity domain. Reordering games or adding an unrelated matchup does not perturb an existing game's result.
+- Completed season state retains full possession-level results plus the derived seed, simulation algorithm version, and calibration profile version. Overall and conference records are rebuilt from committed results, and standings use team ID only as a final presentation-stability fallback.
+- Rankings, polls, championship tiebreakers, postseason selection, and conference schedule optimization are intentionally outside this capability.
 
 Player and roster domain
 - `sim_core::player` provides stable player IDs, common positions, bounded foundational attributes, and explicit four-season eligibility state.

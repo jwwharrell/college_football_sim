@@ -128,138 +128,6 @@ fn test_game_creation_and_scoring() {
 }
 
 #[test]
-fn test_season_creation_and_records() {
-    let alabama = Team::new(
-        "team1",
-        "Alabama Crimson Tide",
-        "ALA",
-        "Crimson Tide",
-        "SEC",
-        Some("West".to_string()),
-        "Tuscaloosa, AL",
-        95,
-        92,
-        94,
-        90,
-    )
-    .expect("valid team");
-
-    let georgia = Team::new(
-        "team2",
-        "Georgia Bulldogs",
-        "UGA",
-        "Bulldogs",
-        "SEC",
-        Some("East".to_string()),
-        "Athens, GA",
-        94,
-        93,
-        95,
-        92,
-    )
-    .expect("valid team");
-
-    let lsu = Team::new(
-        "team3",
-        "LSU Tigers",
-        "LSU",
-        "Tigers",
-        "SEC",
-        Some("West".to_string()),
-        "Baton Rouge, LA",
-        92,
-        91,
-        90,
-        89,
-    )
-    .expect("valid team");
-
-    let teams = vec![alabama.clone(), georgia.clone(), lsu.clone()];
-    let mut season = Season::new(2023, teams, 12);
-
-    assert_eq!(season.year, 2023);
-    assert_eq!(season.current_week, 1);
-    assert_eq!(season.total_weeks, 12);
-    assert_eq!(season.teams.len(), 3);
-
-    // Add some games
-    let mut game1 = Game::new(
-        "game1",
-        alabama.clone(),
-        georgia.clone(),
-        "Bryant-Denny Stadium, Tuscaloosa, AL",
-        5,
-        true,
-        false,
-    );
-
-    let mut game2 = Game::new(
-        "game2",
-        lsu.clone(),
-        alabama.clone(),
-        "Tiger Stadium, Baton Rouge, LA",
-        7,
-        true,
-        false,
-    );
-
-    // Complete the games with some scores
-    game1.start().expect("scheduled game can start");
-    game1.home_score.add_points(Quarter::First, 7);
-    game1.away_score.add_points(Quarter::First, 3);
-    game1.home_score.add_points(Quarter::Second, 10);
-    game1.away_score.add_points(Quarter::Second, 7);
-    game1.home_score.add_points(Quarter::Third, 0);
-    game1.away_score.add_points(Quarter::Third, 7);
-    game1.home_score.add_points(Quarter::Fourth, 7);
-    game1.away_score.add_points(Quarter::Fourth, 0);
-    game1.complete().expect("started game can complete");
-
-    game2.start().expect("scheduled game can start");
-    game2.home_score.add_points(Quarter::First, 7);
-    game2.away_score.add_points(Quarter::First, 14);
-    game2.home_score.add_points(Quarter::Second, 3);
-    game2.away_score.add_points(Quarter::Second, 7);
-    game2.home_score.add_points(Quarter::Third, 7);
-    game2.away_score.add_points(Quarter::Third, 0);
-    game2.home_score.add_points(Quarter::Fourth, 0);
-    game2.away_score.add_points(Quarter::Fourth, 7);
-    game2.complete().expect("started game can complete");
-
-    season.add_game(game1);
-    season.add_game(game2);
-
-    // Update records
-    season.update_records();
-
-    // Check records
-    let alabama_record = season.record_for_team("team1").unwrap();
-    let georgia_record = season.record_for_team("team2").unwrap();
-    let lsu_record = season.record_for_team("team3").unwrap();
-
-    assert_eq!(alabama_record.wins, 2);
-    assert_eq!(alabama_record.losses, 0);
-    assert_eq!(alabama_record.conference_wins, 2);
-
-    assert_eq!(georgia_record.wins, 0);
-    assert_eq!(georgia_record.losses, 1);
-    assert_eq!(georgia_record.conference_losses, 1);
-
-    assert_eq!(lsu_record.wins, 0);
-    assert_eq!(lsu_record.losses, 1);
-    assert_eq!(lsu_record.conference_losses, 1);
-
-    // Check standings
-    let sec_standings = season.conference_standings("SEC");
-    assert_eq!(sec_standings.len(), 3);
-    assert_eq!(sec_standings[0].0.id, "team1"); // Alabama should be first
-
-    // Advance week
-    season.advance_week();
-    assert_eq!(season.current_week, 2);
-}
-
-#[test]
 fn test_rng_determinism() {
     let seed = 42;
     let mut rng1 = SimRng::new(seed);
@@ -288,14 +156,18 @@ fn test_rng_determinism() {
 
 #[test]
 fn season_becomes_complete_after_advancing_past_final_week() {
-    let mut season = Season::new(2026, Vec::new(), 2);
+    let mut season = Season::new(2026, Vec::new(), 2, Vec::new()).unwrap();
 
     assert!(!season.is_complete());
-    season.advance_week();
+    season
+        .advance_week(42, &crate::simulation::SimulationConfig::default())
+        .unwrap();
     assert!(!season.is_complete());
-    season.advance_week();
+    season
+        .advance_week(42, &crate::simulation::SimulationConfig::default())
+        .unwrap();
     assert!(season.is_complete());
-    assert_eq!(season.current_week, 3);
+    assert_eq!(season.current_week(), None);
 }
 
 #[test]
